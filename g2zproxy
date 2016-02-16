@@ -125,22 +125,12 @@ class G2ZProxy(object):
         """
         Create http request string to Graphite server.
 
-        We can use function in request:
-            graphite[metric_name, graphite_func({metric})] will be translate to:
-            target=graphite_func(metric_name)
+        A metric of the form graphite[METRIC_STRING] will have {host} replaced with the Zabbix host
         """
 
         result = None
 
-        params = map(lambda x: x.strip(), metric['metric'].split(';'))
-
-        if len(params) > 1:
-            req_metric = '{0}.{1}'.format(metric['host'], params[0])
-            req = params[1].format(metric=req_metric)
-        else:
-            req = '{host}.{metric}'
-
-        req = req.format(host=metric['host'], metric=metric['metric'])
+        req = metric['metric'].format(host=metric['host'])
         req = self.aggregation_function.format(metric=req)
         req = urllib2.quote(req)
 
@@ -165,7 +155,7 @@ class G2ZProxy(object):
                 data = yaml.load(res)
             except Exception as e:
                 # if error, process next metric and print exception
-		logger.error('%s', e)
+                logger.error('%s', e)
                 return #continue
             finally:
                 e_time = time.time() - s_time
@@ -183,7 +173,7 @@ class G2ZProxy(object):
                     # We are only interested in latest datapoint
                     data = datapoints[-1]
                     # Update metric record
-		    logger.debug({'value': data[0], 'time': data[1] })
+                    logger.debug({'value': data[0], 'time': data[1] })
                     metric.update({ 'value': data[0], 'time': data[1] })
 
         pool = Pool(processes=self.threads)
